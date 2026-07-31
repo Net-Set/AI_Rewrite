@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  body {
+    width: 300px;
+    font-family: -apple-system, Segoe UI, sans-serif;
+    padding: 16px;
+    background: #1e1e1e;
+    color: #eee;
+  }
+  h2 { font-size: 15px; margin: 0 0 12px; }
+  label { font-size: 12px; color: #aaa; display: block; margin-bottom: 4px; }
+  input, select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px;
+    margin-bottom: 12px;
+    border-radius: 6px;
+    border: 1px solid #444;
+    background: #2a2a2a;
+    color: #eee;
+    font-size: 13px;
+  }
+  button {
+    width: 100%;
+    padding: 9px;
+    border: none;
+    border-radius: 6px;
+    background: #d97757;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  button:hover { background: #c96844; }
+  #status { font-size: 12px; margin-top: 8px; text-align: center; min-height: 14px; }
+  .hint { font-size: 11px; color: #888; margin-top: 10px; line-height: 1.4; }
+  a { color: #d97757; }
+</style>
+</head>
+<body>
+  <h2>AI Rewrite Settings</h2>
+  <label for="apiKey">Google Gemini API Key (free)</label>
+  <input type="password" id="apiKey" placeholder="AIza..." />
+
+  <label for="model">Model</label>
+  <select id="model">
+    <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash-Lite (recommended, free, fast)</option>
+    <option value="gemini-3.6-flash">Gemini 3.6 Flash (newer, stronger, free)</option>
+  </select>
+
+  <button id="save">Save</button>
+  <div id="status"></div>
+
+  <div class="hint">
+    Get a <b>free</b> key (no credit card) at
+    <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a>.
+    Then select text on any page, right-click → AI Rewrite.
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

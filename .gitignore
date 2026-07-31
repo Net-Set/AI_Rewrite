@@ -1,0 +1,23 @@
+# Secrets — never commit API keys or local config
+config.ini
+*.env
+
+# AutoHotkey compiled output
+*.exe
+
+# Python (if the PyInstaller desktop variant is used)
+__pycache__/
+*.pyc
+build/
+dist/
+*.spec
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
