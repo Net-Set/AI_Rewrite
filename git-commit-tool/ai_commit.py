@@ -78,7 +78,8 @@ def get_api_key():
 def get_staged_diff():
     result = subprocess.run(
         ["git", "diff", "--staged"],
-        capture_output=True, text=True
+        capture_output=True, text=True,
+        encoding="utf-8", errors="replace"
     )
     if result.returncode != 0:
         print("Error running git diff — are you inside a git repository?")
@@ -90,7 +91,8 @@ def get_staged_diff():
 def get_staged_file_summary():
     result = subprocess.run(
         ["git", "diff", "--staged", "--stat"],
-        capture_output=True, text=True
+        capture_output=True, text=True,
+        encoding="utf-8", errors="replace"
     )
     return result.stdout.strip()
 
@@ -124,6 +126,21 @@ def call_gemini(api_key, diff_text):
         raise RuntimeError("No text returned from API.")
 
 
+def has_any_changes():
+    """Check if there's anything at all to work with — staged, unstaged, or untracked."""
+    result = subprocess.run(
+        ["git", "status", "--porcelain"],
+        capture_output=True, text=True,
+        encoding="utf-8", errors="replace"
+    )
+    return bool(result.stdout and result.stdout.strip())
+
+
+def stage_everything():
+    result = subprocess.run(["git", "add", "-A"])
+    return result.returncode == 0
+
+
 def do_commit(message):
     result = subprocess.run(["git", "commit", "-m", message])
     return result.returncode == 0
@@ -131,9 +148,23 @@ def do_commit(message):
 
 def main():
     diff = get_staged_diff()
+    if diff is None:
+        print("Error: could not read git diff output. Is git installed and on your PATH?")
+        sys.exit(1)
+
     if not diff.strip():
-        print("No staged changes found. Stage something first with 'git add <files>'.")
-        sys.exit(0)
+        # Nothing staged yet — auto-stage everything if there's anything to stage
+        if not has_any_changes():
+            print("No changes found — working tree is clean.")
+            sys.exit(0)
+        print("Nothing staged yet — staging all changes automatically (git add -A)...")
+        if not stage_everything():
+            print("Error: 'git add -A' failed — check git output above.")
+            sys.exit(1)
+        diff = get_staged_diff()
+        if not diff or not diff.strip():
+            print("Still nothing staged after 'git add -A' — nothing to commit.")
+            sys.exit(0)
 
     summary = get_staged_file_summary()
     print("Staged changes:")
