@@ -1,11 +1,13 @@
 {
   "manifest_version": 3,
   "name": "AI Rewrite (Grammarly Alternative)",
-  "version": "1.0.0",
-  "description": "Select any text, right-click, and rewrite it in place using Google's free Gemini AI. Works on any webpage textbox, Gmail, Docs, etc.",
+  "version": "1.1.0",
+  "description": "Select any text, right-click, and rewrite it in place using Google Gemini, OpenAI, or Anthropic Claude — plus your own custom instructions. Works on any webpage textbox, Gmail, Docs, etc.",
   "permissions": ["contextMenus", "activeTab", "scripting", "storage"],
   "host_permissions": [
-    "https://generativelanguage.googleapis.com/*"
+    "https://generativelanguage.googleapis.com/*",
+    "https://api.openai.com/*",
+    "https://api.anthropic.com/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -14,7 +16,8 @@
     {
       "matches": ["<all_urls>"],
       "js": ["content.js"],
-      "run_at": "document_idle"
+      "run_at": "document_idle",
+      "all_frames": true
     }
   ],
   "action": {

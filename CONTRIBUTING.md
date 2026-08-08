@@ -23,6 +23,24 @@ extension after each change.
 Install [AutoHotkey v2](https://www.autohotkey.com/), edit `desktop-autohotkey/AI_Rewrite.ahk`
 directly, and re-run the script to test changes. No compilation needed during development.
 
+### Git commit tool (Python)
+```bash
+cd git-commit-tool
+pip install -r requirements.txt
+python ai_commit.py
+```
+No test suite — verify manually by staging a change in a scratch repo *outside this one*
+and running the script there (running it against this repo's own history would
+stage/commit real project changes).
+
+### Adding a new AI provider
+All three components support Google Gemini, OpenAI, and Anthropic Claude via the same
+pattern: a `call<Provider>()`-style function per provider plus a dispatcher that reads the
+user's active-provider setting. Adding a new provider means implementing that function in
+each component you want it in — see the "Architecture notes" section of
+[`CLAUDE.md`](./CLAUDE.md) for the exact request/response shape each existing provider
+uses.
+
 ## Code style
 
 - Keep functions small and commented — this codebase is meant to be readable by

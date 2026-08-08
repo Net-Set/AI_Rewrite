@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <style>
   body {
-    width: 300px;
+    width: 320px;
     font-family: -apple-system, Segoe UI, sans-serif;
     padding: 16px;
     background: #1e1e1e;
@@ -42,22 +42,36 @@
 </head>
 <body>
   <h2>AI Rewrite Settings</h2>
-  <label for="apiKey">Google Gemini API Key (free)</label>
-  <input type="password" id="apiKey" placeholder="AIza..." />
 
-  <label for="model">Model</label>
-  <select id="model">
-    <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash-Lite (recommended, free, fast)</option>
-    <option value="gemini-3.6-flash">Gemini 3.6 Flash (newer, stronger, free)</option>
+  <label for="provider">Active provider (used by all rewrite modes)</label>
+  <select id="provider">
+    <option value="gemini">Google Gemini (free)</option>
+    <option value="openai">OpenAI (ChatGPT)</option>
+    <option value="anthropic">Anthropic Claude</option>
   </select>
+
+  <label for="geminiKey">Google Gemini API key</label>
+  <input type="password" id="geminiKey" placeholder="AIza..." />
+
+  <label for="openaiKey">OpenAI API key</label>
+  <input type="password" id="openaiKey" placeholder="sk-..." />
+
+  <label for="anthropicKey">Anthropic (Claude) API key</label>
+  <input type="password" id="anthropicKey" placeholder="sk-ant-..." />
 
   <button id="save">Save</button>
   <div id="status"></div>
 
   <div class="hint">
-    Get a <b>free</b> key (no credit card) at
+    Only the <b>active provider</b> needs a key — leave the others blank. Get a
+    <b>free</b> Gemini key (no credit card) at
     <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a>.
-    Then select text on any page, right-click → AI Rewrite.
+    Then select text on any page, right-click → AI Rewrite (or "Custom Instruction..." to
+    type your own request).
+  </div>
+  <div class="hint">
+    Keys are stored locally in this browser profile only — never synced to Google's
+    servers, never sent anywhere except directly to the provider you choose.
   </div>
 
   <script src="popup.js"></script>
