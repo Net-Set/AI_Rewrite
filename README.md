@@ -32,6 +32,11 @@ them yourself (or verify that), see that script and the per-component READMEs li
 below. The browser extension isn't distributed as a download — it's loaded directly from
 source (see Option A below), since that's how unpacked Chrome/Edge extensions work.
 
+> **Windows flags the installer as "Unknown Publisher" / your antivirus blocks it?**
+> That's expected for an unsigned build, not a sign the file is broken — see
+> [`installer/README.md`](./installer/README.md#why-windowsantivirus-flags-this-installer)
+> for why it happens and how to sign your own build.
+
 ## Why this exists
 
 Grammarly is great, but it's a subscription product with a paid tier gating most useful
