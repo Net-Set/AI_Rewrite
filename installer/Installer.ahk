@@ -2,7 +2,15 @@
 ; AI Rewrite — Unified Setup (AutoHotkey v2)
 ; Bundles AI_Rewrite.exe (desktop rewrite tool) and ai-commit.exe
 ; (AI git commit tool) into a single self-contained installer.
-; Run with /uninstall to remove a previous install.
+;
+; CLI flags (combinable, order doesn't matter, case-insensitive):
+;   /uninstall        Remove a previous install (shows a confirmation prompt).
+;   /S or /silent      No GUI: installs both components to the default folder
+;                      with the startup entry on and no API key configured
+;                      (add one later from either app's tray menu). Exits 0 on
+;                      success, 1 on failure — for unattended installers, e.g.
+;                      a Microsoft Store "unpackaged Win32 app" submission.
+;   /uninstall /S      Silent uninstall: same removal, no prompts.
 ; ============================================================
 #Requires AutoHotkey v2.0
 #SingleInstance Force
@@ -14,9 +22,23 @@ Publisher := "Somil Merugawar"
 UninstallRegKey := "HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\AIRewrite"
 StartMenuFolder := A_Programs . "\AI Rewrite"
 
-if (A_Args.Length > 0 and A_Args[1] = "/uninstall") {
-    RunUninstall()
+uninstallFlag := false
+silentFlag := false
+for arg in A_Args {
+    argLower := StrLower(arg)
+    if (argLower = "/uninstall")
+        uninstallFlag := true
+    else if (argLower = "/s" or argLower = "/silent")
+        silentFlag := true
+}
+
+if (uninstallFlag) {
+    RunUninstall(silentFlag)
     ExitApp()
+}
+
+if (silentFlag) {
+    RunSilentInstall()   ; exits the process itself
 }
 
 RunInstaller()
@@ -76,42 +98,7 @@ RunInstaller() {
         statusText.Text := "Installing..."
 
         try {
-            DirCreate(installDir)
-            apiKey := Trim(keyEdit.Value)
-
-            if (cbRewrite.Value) {
-                FileInstall("dist\AI_Rewrite.exe", installDir . "\AI_Rewrite.exe", true)
-                if (apiKey != "") {
-                    IniWrite("gemini", installDir . "\config.ini", "settings", "provider")
-                    IniWrite(apiKey, installDir . "\config.ini", "settings", "gemini_api_key")
-                    IniWrite("gemini-3.1-flash-lite", installDir . "\config.ini", "settings", "gemini_model")
-                    ; Best-effort: restrict the plaintext-key config file to the current user only.
-                    try RunWait('icacls "' . installDir . '\config.ini" /inheritance:r /grant:r "' . A_UserName . '":F /q', , "Hide")
-                }
-                DirCreate(StartMenuFolder)
-                FileCreateShortcut(installDir . "\AI_Rewrite.exe", StartMenuFolder . "\AI Rewrite.lnk")
-                if (cbStartup.Value)
-                    FileCreateShortcut(installDir . "\AI_Rewrite.exe", A_Startup . "\AI Rewrite.lnk")
-            }
-
-            if (cbCommit.Value) {
-                FileInstall("dist\ai-commit.exe", installDir . "\ai-commit.exe", true)
-                if (apiKey != "") {
-                    aiCommitConfigDir := EnvGet("UserProfile") . "\.ai-commit"
-                    DirCreate(aiCommitConfigDir)
-                    aiCommitConfigFile := aiCommitConfigDir . "\config.ini"
-                    IniWrite("gemini", aiCommitConfigFile, "settings", "provider")
-                    IniWrite(apiKey, aiCommitConfigFile, "settings", "gemini_api_key")
-                    ; Best-effort: restrict the plaintext-key config file to the current user only.
-                    try RunWait('icacls "' . aiCommitConfigFile . '" /inheritance:r /grant:r "' . A_UserName . '":F /q', , "Hide")
-                }
-                AddToUserPath(installDir)
-            }
-
-            FileCopy(A_ScriptFullPath, installDir . "\Uninstall.exe", true)
-            DirCreate(StartMenuFolder)
-            FileCreateShortcut(installDir . "\Uninstall.exe", StartMenuFolder . "\Uninstall AI Rewrite.lnk", , "/uninstall")
-            WriteUninstallRegistry(installDir)
+            PerformInstall(installDir, cbRewrite.Value, cbCommit.Value, cbStartup.Value, Trim(keyEdit.Value))
         } catch as e {
             statusText.Text := "Install failed: " . e.Message
             installBtn.Enabled := true
@@ -123,6 +110,61 @@ RunInstaller() {
         mainGui.Destroy()
         ShowFinishScreen(installDir, launchAfter)
     }
+}
+
+; Shared by the GUI wizard (DoInstall) and the silent install path
+; (RunSilentInstall) so the two never drift out of sync.
+PerformInstall(installDir, installRewrite, installCommit, launchAtStartup, apiKey) {
+    DirCreate(installDir)
+
+    if (installRewrite) {
+        FileInstall("dist\AI_Rewrite.exe", installDir . "\AI_Rewrite.exe", true)
+        if (apiKey != "") {
+            IniWrite("gemini", installDir . "\config.ini", "settings", "provider")
+            IniWrite(apiKey, installDir . "\config.ini", "settings", "gemini_api_key")
+            IniWrite("gemini-3.1-flash-lite", installDir . "\config.ini", "settings", "gemini_model")
+            ; Best-effort: restrict the plaintext-key config file to the current user only.
+            try RunWait('icacls "' . installDir . '\config.ini" /inheritance:r /grant:r "' . A_UserName . '":F /q', , "Hide")
+        }
+        DirCreate(StartMenuFolder)
+        FileCreateShortcut(installDir . "\AI_Rewrite.exe", StartMenuFolder . "\AI Rewrite.lnk")
+        if (launchAtStartup)
+            FileCreateShortcut(installDir . "\AI_Rewrite.exe", A_Startup . "\AI Rewrite.lnk")
+    }
+
+    if (installCommit) {
+        FileInstall("dist\ai-commit.exe", installDir . "\ai-commit.exe", true)
+        if (apiKey != "") {
+            aiCommitConfigDir := EnvGet("UserProfile") . "\.ai-commit"
+            DirCreate(aiCommitConfigDir)
+            aiCommitConfigFile := aiCommitConfigDir . "\config.ini"
+            IniWrite("gemini", aiCommitConfigFile, "settings", "provider")
+            IniWrite(apiKey, aiCommitConfigFile, "settings", "gemini_api_key")
+            ; Best-effort: restrict the plaintext-key config file to the current user only.
+            try RunWait('icacls "' . aiCommitConfigFile . '" /inheritance:r /grant:r "' . A_UserName . '":F /q', , "Hide")
+        }
+        AddToUserPath(installDir)
+    }
+
+    FileCopy(A_ScriptFullPath, installDir . "\Uninstall.exe", true)
+    DirCreate(StartMenuFolder)
+    FileCreateShortcut(installDir . "\Uninstall.exe", StartMenuFolder . "\Uninstall AI Rewrite.lnk", , "/uninstall")
+    WriteUninstallRegistry(installDir)
+}
+
+; ================= SILENT INSTALL (unattended — e.g. Store submissions) =================
+; Installs both components to the default folder with the startup entry on and
+; no API key (there's no GUI to type one into — set it later from either app's
+; tray menu / settings). No windows, no prompts. Exits 0 on success, 1 on
+; failure so an automated installer can detect the outcome.
+RunSilentInstall() {
+    installDir := EnvGet("LocalAppData") . "\Programs\AI Rewrite"
+    try {
+        PerformInstall(installDir, true, true, true, "")
+    } catch {
+        ExitApp(1)
+    }
+    ExitApp(0)
 }
 
 ShowFinishScreen(installDir, offerLaunch) {
@@ -189,16 +231,18 @@ BroadcastEnvChange() {
 }
 
 ; ================= UNINSTALL =================
-RunUninstall() {
+RunUninstall(silent := false) {
     installDir := A_ScriptDir
 
-    result := MsgBox(
-        AppName . " will be removed, including its Start Menu shortcuts, startup entry, and PATH entry.`n`nContinue?",
-        AppName . " — Uninstall",
-        "YesNo Icon!"
-    )
-    if (result != "Yes")
-        return
+    if (!silent) {
+        result := MsgBox(
+            AppName . " will be removed, including its Start Menu shortcuts, startup entry, and PATH entry.`n`nContinue?",
+            AppName . " — Uninstall",
+            "YesNo Icon!"
+        )
+        if (result != "Yes")
+            return
+    }
 
     try ProcessClose("AI_Rewrite.exe")
 
@@ -207,7 +251,8 @@ RunUninstall() {
     try RemoveFromUserPath(installDir)
     try RegDeleteKey(UninstallRegKey)
 
-    MsgBox(AppName . " has been uninstalled.", AppName, "IconI")
+    if (!silent)
+        MsgBox(AppName . " has been uninstalled.", AppName, "IconI")
 
     ; This exe is running from inside installDir, so it can't delete itself or
     ; its own folder directly. Hand off to a detached cmd that waits for this
