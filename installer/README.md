@@ -66,3 +66,24 @@ Until a build is signed and has reputation, the honest guidance is: click **"Mor
 "Run anyway"** on the SmartScreen prompt, or add an exception in whatever antivirus flags
 it. This is a real, known rough edge of shipping an unsigned free/open-source Windows
 installer — not something specific to your download being broken.
+
+## CLI flags and exit codes
+
+`Installer.ahk` accepts these flags (combinable, case-insensitive, order doesn't matter):
+
+| Flag | Behavior |
+|---|---|
+| *(none)* | Runs the interactive GUI install wizard |
+| `/S` or `/silent` | Silent install: both components, default folder (`%LocalAppData%\Programs\AI Rewrite`), startup entry on, no API key configured (add one later from either app's tray menu). No windows, no prompts |
+| `/uninstall` | Runs the interactive uninstall (confirmation + completion message boxes) |
+| `/uninstall /S` (or `/silent`) | Silent uninstall — same removal, no prompts |
+
+Exit codes for the silent paths (`RunSilentInstall`/silent `RunUninstall`):
+
+| Code | Meaning |
+|---|---|
+| `0` | Success |
+| `1` | Failure — any exception during install (e.g. couldn't write to the target folder). The installer doesn't distinguish disk-full, in-progress, or reboot-required conditions separately; all non-zero outcomes currently collapse to `1` |
+
+The GUI wizard path doesn't use exit codes for install outcomes — failures are shown inline
+in the wizard's status text instead, since a human is present to read them.
